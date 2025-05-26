@@ -72,12 +72,12 @@ typedef enum
  * @struct hash_entry_t
  * @brief Represents a single key-value pair in the hashmap.
  *
- * This structure stores a key as a null-terminated string and a pointer to the associated value.
+ * This structure stores a key as a void pointer (typically a null-terminated string)
  * The value can be of any type, as it is represented by a void pointer.
  */
 typedef struct
 {
-    char *key;      ///< Key for the hashmap entry (null-terminated string)
+    void *key;      ///< Key for the hashmap entry (generic pointer, typically a string)
     void *value;    ///< Value associated with the key (generic pointer)
     hash_entry_status_t status; ///< Status of the entry (EMPTY, OCCUPIED, TOMBSTONE)
     uint32_t hash; ///< Hash value of the key, used for quick lookups
@@ -110,7 +110,7 @@ typedef struct {
  * and returns an unsigned long hash value. Used to specify custom hash functions
  * for the hashmap.
  */
-typedef unsigned long (*hash_function_t)(const char *key);
+typedef unsigned long (*hash_function_t)(const void *key);
 
 // ============= HASHMAP FUNCTIONS =============
 int hashmap_resize(hashmap_t* map, size_t new_capacity);
@@ -120,7 +120,7 @@ void* hashmap_get(hashmap_t* map, const char* key);
 hashmap_t* hashmap_new(size_t capacity, size_t el_size, double grow_factor);
 int hashmap_remove(hashmap_t* map, const char* key);
 
-// ============= HASHMAP FUNCTIONS =============
+// ============= DEFAULT HASHING =============
 /**
  * @brief Computes a 32-bit FNV-1a hash for a given null-terminated string key.
  *
@@ -131,7 +131,7 @@ int hashmap_remove(hashmap_t* map, const char* key);
  * @param key The null-terminated string to hash.
  * @return The 32-bit hash value of the input key.
  */
-inline uint32_t hash_key_t(const char* key)
+inline uint32_t hash_str_key(const char* key)
 {
     uint32_t hash = 2166136261u; // FNV offset basis
     for (size_t i = 0; key[i]; i++)
@@ -141,6 +141,27 @@ inline uint32_t hash_key_t(const char* key)
     }
     return hash;
 }
+
+/**
+ * @brief Hashes a 32-bit integer using a mix of bitwise and multiplicative operations.
+ *
+ * This function applies a series of XOR and multiplication steps to the input integer
+ * to produce a well-distributed 32-bit hash value. It is suitable for use in hash tables
+ * and is inspired by techniques such as MurmurHash finalization.
+ *
+ * @param x The 32-bit integer to hash.
+ * @return The hashed 32-bit integer.
+ */
+inline uint32_t hash_int(uint32_t x)
+{
+    x ^= x >> 16;
+    x *= 0x85ebca6b;
+    x ^= x >> 13;
+    x *= 0xc2b2ae35;
+    x ^= x >> 16;
+    return x;
+}
+
 
 /**
  * @brief Calculates the probe distance for a given hash and index in the hashmap.
@@ -173,13 +194,14 @@ inline size_t hash_probe_distance_t
  * If the key is not found or the map/key is NULL, NULL is returned.
  *
  * @param map Pointer to the hashmap structure.
- * @param key Null-terminated string representing the key to search for.
+ * @param key Pointer to the key to search for.
+ * @param hash_fn Function pointer for a custom hash function.
  * @return Pointer to the value associated with the key, or NULL if not found.
  */
-inline void* hashmap_get(hashmap_t* map, const char* key)
+inline void* hashmap_get(hashmap_t* map, void* key, const hash_function_t hash_fn)
 {
     if (!map || !key) return NULL; // Check for NULL map or key
-    const uint32_t hash = hash_key_t(key); // Compute hash for the key
+    const uint32_t hash = hash_fn(key); // Compute hash for the key
     size_t index = hash % map->capacity;   // Initial index based on hash
 
     // Probe until an empty slot is found
@@ -265,11 +287,12 @@ inline void hashmap_free(hashmap_t* map)
  * distance than the existing entry at the current index.
  *
  * @param map Pointer to the hashmap structure.
- * @param key Null-terminated string representing the key to insert.
+ * @param key Pointer to the key to insert (should be a cloned value)
  * @param value Pointer to the value to associate with the key.
+ * @param hash_fn Function pointer for a custom hash function.
  * @return 1 on successful insertion, 0 on failure (e.g., allocation failure or invalid input).
  */
-inline int hashmap_insert(hashmap_t* map, const char* key, void *value)
+inline int hashmap_insert(hashmap_t* map, void* key, void *value, const hash_function_t hash_fn)
 {
     if (!map || !key) return 0;
     if (map->count + 1 > map->capacity * 0.9)
@@ -277,11 +300,11 @@ inline int hashmap_insert(hashmap_t* map, const char* key, void *value)
         if (!hashmap_resize(map, map->capacity * 2)) return 0;
     }
 
-    const uint32_t hash = hash_key_t(key);
+    const uint32_t hash = hash_fn(key);
     size_t index = hash % map->capacity;
     size_t dist = 0;
     hash_entry_t new_entry = {
-        .key = strdup(key),
+        .key = key,
         .value = value,
         .status = OCCUPIED,
         .hash = hash
@@ -368,13 +391,14 @@ inline int hashmap_resize(hashmap_t* map, const size_t new_capacity)
  * If the key is not found or the map/key is NULL, it returns 0.
  *
  * @param map Pointer to the hashmap structure.
- * @param key Null-terminated string representing the key to remove.
+ * @param key Pointer to the key to remove.
+ * @param hash_fn Function pointer for a custom hash function.
  * @return 1 if the key was found and removed, 0 otherwise.
  */
-inline int hashmap_remove(hashmap_t* map, const char* key)
+inline int hashmap_remove(hashmap_t* map, void* key, const hash_function_t hash_fn)
 {
     if (!map || !key) return 0;
-    const uint32_t hash = hash_key_t(key);
+    const uint32_t hash = hash_fn(key);
     size_t index = hash % map->capacity;
 
     while (map->entries[index].status != EMPTY)
