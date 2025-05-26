@@ -305,6 +305,15 @@ inline void hashmap_free(hashmap_t* map)
         map->destructor(map);
     }
 
+    // Free all keys in the entries array
+    for (size_t i = 0; i < map->capacity; i++)
+    {
+        if (map->entries[i].status == OCCUPIED)
+        {
+            free(map->entries[i].key);
+        }
+    }
+
     free(map->entries);
     free(map);
 }
