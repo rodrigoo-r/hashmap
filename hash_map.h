@@ -144,7 +144,7 @@ int hashmap_resize(hashmap_t* map, size_t new_capacity);
 int hashmap_insert(hashmap_t* map, void* key, void *value);
 void hashmap_free(hashmap_t* map);
 void* hashmap_get(hashmap_t* map, void* key);
-hashmap_t* hashmap_new(size_t capacity, double grow_factor);
+hashmap_t* hashmap_new(size_t capacity, double grow_factor, hashmap_destructor_t destructor, hash_function_t hash_fn);
 int hashmap_remove(hashmap_t* map, void* key);
 
 // ============= DEFAULT HASHING =============
@@ -265,7 +265,8 @@ inline void* hashmap_get(hashmap_t* map, void* key, const hash_function_t hash_f
 inline hashmap_t* hashmap_new(
     const size_t capacity,
     const double grow_factor,
-    const hashmap_destructor_t destructor
+    const hashmap_destructor_t destructor,
+    const hash_function_t hash_fn
 )
 {
     hashmap_t* map = (hashmap_t*)malloc(sizeof(hashmap_t));
@@ -282,6 +283,7 @@ inline hashmap_t* hashmap_new(
     map->count = 0;
     map->grow_factor = grow_factor;
     map->destructor = destructor;
+    map->hash_fn = hash_fn ? hash_fn : hash_str_key; // Use default hash function if none provided
     return map;
 }
 
@@ -378,7 +380,7 @@ inline int hashmap_insert(hashmap_t* map, void* key, void *value)
  */
 inline int hashmap_resize(hashmap_t* map, const size_t new_capacity)
 {
-    hashmap_t* new_map = hashmap_new(new_capacity, map->grow_factor);
+    hashmap_t* new_map = hashmap_new(new_capacity, map->grow_factor, map->destructor, map->hash_fn);
     if (!new_map) return 0;
 
     // Reinsert all existing entries
