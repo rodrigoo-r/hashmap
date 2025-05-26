@@ -4,5 +4,5 @@ project(hashmap C)
 set(CMAKE_C_STANDARD 11)
 
 add_library(hashmap STATIC
-        include/fluent/hashmap/hashmap.c
-        include/fluent/hashmap/hashmap.h)
+        hashmap.c
+        hashmap.h)
