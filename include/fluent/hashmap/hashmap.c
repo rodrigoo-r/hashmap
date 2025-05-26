@@ -8,4 +8,4 @@
  * under certain conditions; type `show c' for details.
 */
 
-#include "hash_map.h"
+#include "hashmap.h"
