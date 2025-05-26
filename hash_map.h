@@ -53,6 +53,16 @@ extern "C"
 #include <string.h>
 
 /**
+ * @typedef hash_function_t
+ * @brief Function pointer type for hashing a string key.
+ *
+ * This type defines a function that takes a constant character pointer (the key)
+ * and returns an unsigned long hash value. Used to specify custom hash functions
+ * for the hashmap.
+ */
+typedef unsigned long (*hash_function_t)(const void *key);
+
+/**
  * @enum hash_entry_status_t
  * @brief Represents the status of a hashmap entry.
  *
@@ -93,9 +103,9 @@ typedef struct
  * - entries: Pointer to the array of hash entries.
  * - capacity: Total number of slots in the hash map.
  * - count: Number of key-value pairs currently stored.
- * - el_size: Size of each value in bytes (used for memory management).
  * - grow_factor: Factor by which the hashmap grows when resized.
  * - destructor: Function pointer for a custom destructor to free values.
+ * - hash_fn: Function pointer for a custom hash function.
  */
 typedef struct hashmap_t
 {
@@ -105,6 +115,7 @@ typedef struct hashmap_t
     double grow_factor;    ///< Growth factor for resizing the hashmap
     void (*destructor)     ///< Function pointer for custom destructor
         (const struct hashmap_t *map);
+    hash_function_t hash_fn; ///< Function pointer for custom hash function
 } hashmap_t;
 
 /**
@@ -115,16 +126,6 @@ typedef struct {
     hashmap_t* map;    ///< Pointer to the hashmap
     size_t index;      ///< Current index in the entries array
 } hashmap_iter_t;
-
-/**
- * @typedef hash_function_t
- * @brief Function pointer type for hashing a string key.
- *
- * This type defines a function that takes a constant character pointer (the key)
- * and returns an unsigned long hash value. Used to specify custom hash functions
- * for the hashmap.
- */
-typedef unsigned long (*hash_function_t)(const void *key);
 
 /**
  * @typedef hashmap_destructor_t
@@ -140,11 +141,11 @@ typedef void (*hashmap_destructor_t)(const hashmap_t *map);
 
 // ============= HASHMAP FUNCTIONS =============
 int hashmap_resize(hashmap_t* map, size_t new_capacity);
-int hashmap_insert(hashmap_t* map, const char* key, void *value);
+int hashmap_insert(hashmap_t* map, void* key, void *value);
 void hashmap_free(hashmap_t* map);
-void* hashmap_get(hashmap_t* map, const char* key);
+void* hashmap_get(hashmap_t* map, void* key);
 hashmap_t* hashmap_new(size_t capacity, double grow_factor);
-int hashmap_remove(hashmap_t* map, const char* key);
+int hashmap_remove(hashmap_t* map, void* key);
 
 // ============= DEFAULT HASHING =============
 /**
@@ -317,10 +318,9 @@ inline void hashmap_free(hashmap_t* map)
  * @param map Pointer to the hashmap structure.
  * @param key Pointer to the key to insert (should be a cloned value)
  * @param value Pointer to the value to associate with the key.
- * @param hash_fn Function pointer for a custom hash function.
  * @return 1 on successful insertion, 0 on failure (e.g., allocation failure or invalid input).
  */
-inline int hashmap_insert(hashmap_t* map, void* key, void *value, const hash_function_t hash_fn)
+inline int hashmap_insert(hashmap_t* map, void* key, void *value)
 {
     if (!map || !key) return 0;
     if (map->count + 1 > map->capacity * 0.9)
@@ -328,7 +328,7 @@ inline int hashmap_insert(hashmap_t* map, void* key, void *value, const hash_fun
         if (!hashmap_resize(map, map->capacity * map->grow_factor)) return 0;
     }
 
-    const uint32_t hash = hash_fn(key);
+    const uint32_t hash = map->hash_fn(key);
     size_t index = hash % map->capacity;
     size_t dist = 0;
     hash_entry_t new_entry = {
@@ -386,7 +386,13 @@ inline int hashmap_resize(hashmap_t* map, const size_t new_capacity)
     {
         if (map->entries[i].status == OCCUPIED)
         {
-            if (!hashmap_insert(new_map, map->entries[i].key, map->entries[i].value))
+            if (
+                !hashmap_insert(
+                    new_map,
+                    map->entries[i].key,
+                    map->entries[i].value
+                )
+            )
             {
                 hashmap_free(new_map);
                 return 0;
@@ -420,13 +426,12 @@ inline int hashmap_resize(hashmap_t* map, const size_t new_capacity)
  *
  * @param map Pointer to the hashmap structure.
  * @param key Pointer to the key to remove.
- * @param hash_fn Function pointer for a custom hash function.
  * @return 1 if the key was found and removed, 0 otherwise.
  */
-inline int hashmap_remove(hashmap_t* map, void* key, const hash_function_t hash_fn)
+inline int hashmap_remove(hashmap_t* map, void* key)
 {
     if (!map || !key) return 0;
-    const uint32_t hash = hash_fn(key);
+    const uint32_t hash = map->hash_fn(key);
     size_t index = hash % map->capacity;
 
     while (map->entries[index].status != EMPTY)
