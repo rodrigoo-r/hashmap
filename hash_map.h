@@ -457,6 +457,20 @@ inline int hashmap_remove(hashmap_t* map, void* key)
 }
 
 /**
+ * @brief Initializes a hashmap iterator at the beginning of the map.
+ *
+ * This function creates a new iterator for the given hashmap, starting at index 0.
+ * The iterator can be used with `hashmap_iter_next` to traverse all occupied entries.
+ *
+ * @param map Pointer to the hashmap to iterate over.
+ * @return An initialized hashmap_iter_t structure.
+ */
+inline hashmap_iter_t hashmap_iter_begin(hashmap_t* map) {
+    const hashmap_iter_t iter = { .map = map, .index = 0 };
+    return iter;
+}
+
+/**
  * @brief Advances the iterator to the next occupied entry in the hashmap.
  *
  * This function iterates through the hashmap entries starting from the current index
