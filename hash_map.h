@@ -106,6 +106,7 @@ typedef struct
  * - grow_factor: Factor by which the hashmap grows when resized.
  * - destructor: Function pointer for a custom destructor to free values.
  * - hash_fn: Function pointer for a custom hash function.
+ * - free_keys: Flag indicating if keys should be freed on destruction.
  */
 typedef struct hashmap_t
 {
@@ -116,6 +117,7 @@ typedef struct hashmap_t
     void (*destructor)     ///< Function pointer for custom destructor
         (const struct hashmap_t *map);
     hash_function_t hash_fn; ///< Function pointer for custom hash function
+    int free_keys; ///< Flag to indicate if keys should be freed on destruction
 } hashmap_t;
 
 /**
@@ -144,7 +146,13 @@ int hashmap_resize(hashmap_t* map, size_t new_capacity);
 int hashmap_insert(hashmap_t* map, void* key, void *value);
 void hashmap_free(hashmap_t* map);
 void* hashmap_get(hashmap_t* map, void* key);
-hashmap_t* hashmap_new(size_t capacity, double grow_factor, hashmap_destructor_t destructor, hash_function_t hash_fn);
+hashmap_t* hashmap_new(
+    size_t capacity,
+    double grow_factor,
+    hashmap_destructor_t destructor,
+    hash_function_t hash_fn,
+    int free_keys
+);
 int hashmap_remove(hashmap_t* map, void* key);
 
 // ============= DEFAULT HASHING =============
@@ -267,7 +275,8 @@ inline hashmap_t* hashmap_new(
     const size_t capacity,
     const double grow_factor,
     const hashmap_destructor_t destructor,
-    const hash_function_t hash_fn
+    const hash_function_t hash_fn,
+    const int free_keys = 1
 )
 {
     hashmap_t* map = (hashmap_t*)malloc(sizeof(hashmap_t));
@@ -285,6 +294,7 @@ inline hashmap_t* hashmap_new(
     map->grow_factor = grow_factor;
     map->destructor = destructor;
     map->hash_fn = hash_fn ? hash_fn : (hash_function_t)hash_str_key; // Use default hash function if none provided
+    map->free_keys = free_keys; // Set the flag for freeing keys
     return map;
 }
 
@@ -307,11 +317,14 @@ inline void hashmap_free(hashmap_t* map)
     }
 
     // Free all keys in the entries array
-    for (size_t i = 0; i < map->capacity; i++)
+    if (map->free_keys)
     {
-        if (map->entries[i].status == OCCUPIED)
+        for (size_t i = 0; i < map->capacity; i++)
         {
-            free(map->entries[i].key);
+            if (map->entries[i].status == OCCUPIED)
+            {
+                free(map->entries[i].key);
+            }
         }
     }
 
@@ -413,13 +426,17 @@ inline int hashmap_resize(hashmap_t* map, const size_t new_capacity)
     }
 
     // Free old entries and update map
-    for (size_t i = 0; i < map->capacity; i++)
+    if (map->free_keys)
     {
-        if (map->entries[i].status == OCCUPIED)
+        for (size_t i = 0; i < map->capacity; i++)
         {
-            free(map->entries[i].key);
+            if (map->entries[i].status == OCCUPIED)
+            {
+                free(map->entries[i].key);
+            }
         }
     }
+
     free(map->entries);
     map->entries = new_map->entries;
     map->capacity = new_map->capacity;
@@ -454,7 +471,11 @@ inline int hashmap_remove(hashmap_t* map, void* key)
             strcmp(map->entries[index].key, key) == 0
         )
         {
-            free(map->entries[index].key);
+            if (map->free_keys)
+            {
+                free(map->entries[index].key);
+            }
+
             map->entries[index].key = NULL;
             map->entries[index].status = TOMBSTONE;
             map->count--;
