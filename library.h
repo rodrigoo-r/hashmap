@@ -93,14 +93,18 @@ typedef struct
  * - entries: Pointer to the array of hash entries.
  * - capacity: Total number of slots in the hash map.
  * - count: Number of key-value pairs currently stored.
+ * - el_size: Size of each value in bytes (used for memory management).
+ * - grow_factor: Factor by which the hashmap grows when resized.
+ * - destructor: Function pointer for a custom destructor to free values.
  */
-typedef struct
+typedef struct hashmap_t
 {
     hash_entry_t* entries; ///< Array of hash entries
     size_t capacity;       ///< Total capacity of the hash map
     size_t count;          ///< Number of key-value pairs stored
-    size_t el_size;       ///< Size of each entry in bytes
-    double grow_factor;  ///< Growth factor for resizing the hashmap
+    double grow_factor;    ///< Growth factor for resizing the hashmap
+    void (*destructor)     ///< Function pointer for custom destructor
+        (const struct hashmap_t *map);
 } hashmap_t;
 
 /**
@@ -122,12 +126,24 @@ typedef struct {
  */
 typedef unsigned long (*hash_function_t)(const void *key);
 
+/**
+ * @typedef hashmap_destructor_t
+ * @brief Function pointer type for a custom destructor for hashmap values.
+ *
+ * This type defines a function that takes a constant pointer to a hashmap_t structure
+ * and performs cleanup or deallocation of resources associated with the hashmap's values.
+ * It is intended to be used as a custom destructor callback when freeing the hashmap.
+ *
+ * @param map Pointer to the hashmap to be destroyed.
+ */
+typedef void (*hashmap_destructor_t)(const hashmap_t *map);
+
 // ============= HASHMAP FUNCTIONS =============
 int hashmap_resize(hashmap_t* map, size_t new_capacity);
 int hashmap_insert(hashmap_t* map, const char* key, void *value);
 void hashmap_free(hashmap_t* map);
 void* hashmap_get(hashmap_t* map, const char* key);
-hashmap_t* hashmap_new(size_t capacity, size_t el_size, double grow_factor);
+hashmap_t* hashmap_new(size_t capacity, double grow_factor);
 int hashmap_remove(hashmap_t* map, const char* key);
 
 // ============= DEFAULT HASHING =============
@@ -241,11 +257,15 @@ inline void* hashmap_get(hashmap_t* map, void* key, const hash_function_t hash_f
  * and initializes its fields. The entries array is zero-initialized.
  *
  * @param capacity The initial number of slots in the hashmap.
- * @param el_size The size of each value element in bytes.
  * @param grow_factor The factor by which the hashmap should grow when resized.
+ * @param destructor Function pointer for a custom destructor to free values.
  * @return Pointer to the newly created hashmap_t, or NULL on allocation failure.
  */
-inline hashmap_t* hashmap_new(const size_t capacity, const size_t el_size, const double grow_factor)
+inline hashmap_t* hashmap_new(
+    const size_t capacity,
+    const double grow_factor,
+    const hashmap_destructor_t destructor
+)
 {
     hashmap_t* map = (hashmap_t*)malloc(sizeof(hashmap_t));
     if (!map) return NULL;
@@ -259,8 +279,8 @@ inline hashmap_t* hashmap_new(const size_t capacity, const size_t el_size, const
 
     map->capacity = capacity;
     map->count = 0;
-    map->el_size = el_size;
     map->grow_factor = grow_factor;
+    map->destructor = destructor;
     return map;
 }
 
@@ -268,7 +288,7 @@ inline hashmap_t* hashmap_new(const size_t capacity, const size_t el_size, const
  * @brief Frees all memory associated with the given hashmap.
  *
  * This function releases the memory allocated for the hashmap structure,
- * including all keys stored in occupied entries and the entries array itself.
+ * including the entries array itself.
  * If the map pointer is NULL, the function does nothing.
  *
  * @param map Pointer to the hashmap to free.
@@ -276,12 +296,10 @@ inline hashmap_t* hashmap_new(const size_t capacity, const size_t el_size, const
 inline void hashmap_free(hashmap_t* map)
 {
     if (!map) return;
-    for (size_t i = 0; i < map->capacity; i++)
+    // Call the destructor if one is set
+    if (map->destructor)
     {
-        if (map->entries[i].status == OCCUPIED)
-        {
-            free(map->entries[i].key);
-        }
+        map->destructor(map);
     }
 
     free(map->entries);
@@ -307,7 +325,7 @@ inline int hashmap_insert(hashmap_t* map, void* key, void *value, const hash_fun
     if (!map || !key) return 0;
     if (map->count + 1 > map->capacity * 0.9)
     {
-        if (!hashmap_resize(map, map->capacity * 2)) return 0;
+        if (!hashmap_resize(map, map->capacity * map->grow_factor)) return 0;
     }
 
     const uint32_t hash = hash_fn(key);
@@ -360,7 +378,7 @@ inline int hashmap_insert(hashmap_t* map, void* key, void *value, const hash_fun
  */
 inline int hashmap_resize(hashmap_t* map, const size_t new_capacity)
 {
-    hashmap_t* new_map = hashmap_new(new_capacity, map->el_size, map->grow_factor);
+    hashmap_t* new_map = hashmap_new(new_capacity, map->grow_factor);
     if (!new_map) return 0;
 
     // Reinsert all existing entries
@@ -455,7 +473,7 @@ inline hash_entry_t* hashmap_iter_next(hashmap_iter_t* iter)
 
     return NULL; // No more occupied entries
 }
-    
+
 // ============= FLUENT LIB C++ =============
 #if defined(__cplusplus)
 }
