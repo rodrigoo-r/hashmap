@@ -222,13 +222,12 @@ inline size_t hash_probe_distance_t
  *
  * @param map Pointer to the hashmap structure.
  * @param key Pointer to the key to search for.
- * @param hash_fn Function pointer for a custom hash function.
  * @return Pointer to the value associated with the key, or NULL if not found.
  */
-inline void* hashmap_get(hashmap_t* map, void* key, const hash_function_t hash_fn)
+inline void* hashmap_get(hashmap_t* map, void* key)
 {
     if (!map || !key) return NULL; // Check for NULL map or key
-    const uint32_t hash = hash_fn(key); // Compute hash for the key
+    const uint32_t hash = map->hash_fn(key); // Compute hash for the key
     size_t index = hash % map->capacity;   // Initial index based on hash
 
     // Probe until an empty slot is found
@@ -260,6 +259,7 @@ inline void* hashmap_get(hashmap_t* map, void* key, const hash_function_t hash_f
  * @param capacity The initial number of slots in the hashmap.
  * @param grow_factor The factor by which the hashmap should grow when resized.
  * @param destructor Function pointer for a custom destructor to free values.
+ * @param hash_fn Function pointer for a custom hash function.
  * @return Pointer to the newly created hashmap_t, or NULL on allocation failure.
  */
 inline hashmap_t* hashmap_new(
@@ -283,7 +283,7 @@ inline hashmap_t* hashmap_new(
     map->count = 0;
     map->grow_factor = grow_factor;
     map->destructor = destructor;
-    map->hash_fn = hash_fn ? hash_fn : hash_str_key; // Use default hash function if none provided
+    map->hash_fn = hash_fn ? hash_fn : (hash_function_t)hash_str_key; // Use default hash function if none provided
     return map;
 }
 
