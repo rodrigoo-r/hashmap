@@ -176,11 +176,12 @@ inline uint32_t hash_str_key(const char *key)
  * to produce a well-distributed 32-bit hash value. It is suitable for use in hash tables
  * and is inspired by techniques such as MurmurHash finalization.
  *
- * @param x The 32-bit integer to hash.
+ * @param x_ptr Pointer to a 32-bit integer to hash.
  * @return The hashed 32-bit integer.
  */
-inline uint32_t hash_int(uint32_t x)
+inline uint32_t hash_int(uint32_t *x_ptr)
 {
+    const auto x = *x_ptr; // Dereference the pointer to get the integer value
     x ^= x >> 16;
     x *= 0x85ebca6b;
     x ^= x >> 13;
