@@ -94,7 +94,8 @@ typedef struct
  * - capacity: Total number of slots in the hash map.
  * - count: Number of key-value pairs currently stored.
  */
-typedef struct {
+typedef struct
+{
     hash_entry_t* entries; ///< Array of hash entries
     size_t capacity;       ///< Total capacity of the hash map
     size_t count;          ///< Number of key-value pairs stored
