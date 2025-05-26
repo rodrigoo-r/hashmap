@@ -104,6 +104,15 @@ typedef struct
 } hashmap_t;
 
 /**
+ * @struct hashmap_iter_t
+ * @brief Iterator for traversing a hashmap.
+ */
+typedef struct {
+    hashmap_t* map;    ///< Pointer to the hashmap
+    size_t index;      ///< Current index in the entries array
+} hashmap_iter_t;
+
+/**
  * @typedef hash_function_t
  * @brief Function pointer type for hashing a string key.
  *
@@ -422,6 +431,31 @@ inline int hashmap_remove(hashmap_t* map, void* key, const hash_function_t hash_
     return 0;
 }
 
+/**
+ * @brief Advances the iterator to the next occupied entry in the hashmap.
+ *
+ * This function iterates through the hashmap entries starting from the current index
+ * of the iterator. It returns a pointer to the next OCCUPIED entry, or NULL if there
+ * are no more occupied entries.
+ *
+ * @param iter Pointer to the hashmap iterator.
+ * @return Pointer to the next occupied hash_entry_t, or NULL if iteration is complete.
+ */
+inline hash_entry_t* hashmap_iter_next(hashmap_iter_t* iter)
+{
+    if (!iter || !iter->map) return NULL; // Check for valid iterator and map
+
+    // Iterate through the entries array
+    while (iter->index < iter->map->capacity) {
+        hash_entry_t* entry = &iter->map->entries[iter->index++];
+        if (entry->status == OCCUPIED) {
+            return entry; // Return pointer to the next occupied entry
+        }
+    }
+
+    return NULL; // No more occupied entries
+}
+    
 // ============= FLUENT LIB C++ =============
 #if defined(__cplusplus)
 }
