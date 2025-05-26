@@ -187,9 +187,9 @@ inline uint32_t hash_str_key(const char *key)
  * @param x_ptr Pointer to a 32-bit integer to hash.
  * @return The hashed 32-bit integer.
  */
-inline uint32_t hash_int(uint32_t *x_ptr)
+inline uint32_t hash_int(const uint32_t *x_ptr)
 {
-    const auto x = *x_ptr; // Dereference the pointer to get the integer value
+    uint32_t x = *x_ptr; // Dereference the pointer to get the integer value
     x ^= x >> 16;
     x *= 0x85ebca6b;
     x ^= x >> 13;
@@ -269,6 +269,7 @@ inline void* hashmap_get(hashmap_t* map, void* key)
  * @param grow_factor The factor by which the hashmap should grow when resized.
  * @param destructor Function pointer for a custom destructor to free values.
  * @param hash_fn Function pointer for a custom hash function.
+ * @param free_keys Flag indicating if keys should be freed on destruction (1 to free, 0 to not free).
  * @return Pointer to the newly created hashmap_t, or NULL on allocation failure.
  */
 inline hashmap_t* hashmap_new(
@@ -276,7 +277,7 @@ inline hashmap_t* hashmap_new(
     const double grow_factor,
     const hashmap_destructor_t destructor,
     const hash_function_t hash_fn,
-    const int free_keys = 1
+    const int free_keys
 )
 {
     hashmap_t* map = (hashmap_t*)malloc(sizeof(hashmap_t));
@@ -403,7 +404,7 @@ inline int hashmap_insert(hashmap_t* map, void* key, void *value)
  */
 inline int hashmap_resize(hashmap_t* map, const size_t new_capacity)
 {
-    hashmap_t* new_map = hashmap_new(new_capacity, map->grow_factor, map->destructor, map->hash_fn);
+    hashmap_t* new_map = hashmap_new(new_capacity, map->grow_factor, map->destructor, map->hash_fn, map->free_keys);
     if (!new_map) return 0;
 
     // Reinsert all existing entries
