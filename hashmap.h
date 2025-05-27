@@ -497,7 +497,8 @@ inline int hashmap_remove(hashmap_t* map, void* key)
  * @param map Pointer to the hashmap to iterate over.
  * @return An initialized hashmap_iter_t structure.
  */
-inline hashmap_iter_t hashmap_iter_begin(hashmap_t* map) {
+inline hashmap_iter_t hashmap_iter_begin(hashmap_t* map)
+{
     const hashmap_iter_t iter = { .map = map, .index = 0 };
     return iter;
 }
@@ -517,9 +518,11 @@ inline hash_entry_t* hashmap_iter_next(hashmap_iter_t* iter)
     if (!iter || !iter->map) return NULL; // Check for valid iterator and map
 
     // Iterate through the entries array
-    while (iter->index < iter->map->capacity) {
+    while (iter->index < iter->map->capacity)
+    {
         hash_entry_t* entry = &iter->map->entries[iter->index++];
-        if (entry->status == OCCUPIED) {
+        if (entry->status == OCCUPIED)
+        {
             return entry; // Return pointer to the next occupied entry
         }
     }
