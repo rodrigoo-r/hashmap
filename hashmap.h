@@ -239,7 +239,7 @@ static inline void* hashmap_get(hashmap_t* map, void* key)
         )
         {
             // Return pointer to the value if found
-            return &map->entries[index].value;
+            return map->entries[index].value;
         }
 
         // Move to the next index (linear probing)
