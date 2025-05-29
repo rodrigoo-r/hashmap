@@ -166,7 +166,7 @@ int hashmap_remove(hashmap_t* map, void* key);
  * @param key The null-terminated string to hash.
  * @return The 32-bit hash value of the input key.
  */
-inline uint32_t hash_str_key(const char *key)
+static inline uint32_t hash_str_key(const char *key)
 {
     uint32_t hash = 2166136261u; // FNV offset basis
     for (size_t i = 0; key[i]; i++)
