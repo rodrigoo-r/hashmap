@@ -142,18 +142,8 @@ typedef struct {
 typedef void (*hashmap_destructor_t)(const hashmap_t *map);
 
 // ============= HASHMAP FUNCTIONS =============
-int hashmap_resize(hashmap_t* map, size_t new_capacity);
-int hashmap_insert(hashmap_t* map, void* key, void *value);
-void hashmap_free(hashmap_t* map);
-void* hashmap_get(hashmap_t* map, void* key);
-hashmap_t* hashmap_new(
-    size_t capacity,
-    double grow_factor,
-    hashmap_destructor_t destructor,
-    hash_function_t hash_fn,
-    int free_keys
-);
-int hashmap_remove(hashmap_t* map, void* key);
+static inline int hashmap_resize(hashmap_t* map, size_t new_capacity);
+static inline int hashmap_insert(hashmap_t* map, void* key, void *value);
 
 // ============= DEFAULT HASHING =============
 /**
