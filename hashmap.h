@@ -187,7 +187,7 @@ static inline uint32_t hash_str_key(const char *key)
  * @param x_ptr Pointer to a 32-bit integer to hash.
  * @return The hashed 32-bit integer.
  */
-inline uint32_t hash_int(const uint32_t *x_ptr)
+static inline uint32_t hash_int(const uint32_t *x_ptr)
 {
     uint32_t x = *x_ptr; // Dereference the pointer to get the integer value
     x ^= x >> 16;
@@ -233,7 +233,7 @@ static inline size_t hash_probe_distance
  * @param key Pointer to the key to search for.
  * @return Pointer to the value associated with the key, or NULL if not found.
  */
-inline void* hashmap_get(hashmap_t* map, void* key)
+static inline void* hashmap_get(hashmap_t* map, void* key)
 {
     if (!map || !key) return NULL; // Check for NULL map or key
     const uint32_t hash = map->hash_fn(key); // Compute hash for the key
@@ -272,7 +272,7 @@ inline void* hashmap_get(hashmap_t* map, void* key)
  * @param free_keys Flag indicating if keys should be freed on destruction (1 to free, 0 to not free).
  * @return Pointer to the newly created hashmap_t, or NULL on allocation failure.
  */
-inline hashmap_t* hashmap_new(
+static inline hashmap_t* hashmap_new(
     const size_t capacity,
     const double grow_factor,
     const hashmap_destructor_t destructor,
@@ -308,7 +308,7 @@ inline hashmap_t* hashmap_new(
  *
  * @param map Pointer to the hashmap to free.
  */
-inline void hashmap_free(hashmap_t* map)
+static inline void hashmap_free(hashmap_t* map)
 {
     if (!map) return;
     // Call the destructor if one is set
@@ -346,7 +346,7 @@ inline void hashmap_free(hashmap_t* map)
  * @param value Pointer to the value to associate with the key.
  * @return 1 on successful insertion, 0 on failure (e.g., allocation failure or invalid input).
  */
-inline int hashmap_insert(hashmap_t* map, void* key, void *value)
+static inline int hashmap_insert(hashmap_t* map, void* key, void *value)
 {
     if (!map || !key) return 0;
     if (map->count + 1 > map->capacity * 0.9)
@@ -402,7 +402,7 @@ inline int hashmap_insert(hashmap_t* map, void* key, void *value)
  * @param new_capacity The desired new capacity for the hashmap.
  * @return 1 on success, 0 on failure.
  */
-inline int hashmap_resize(hashmap_t* map, const size_t new_capacity)
+static inline int hashmap_resize(hashmap_t* map, const size_t new_capacity)
 {
     hashmap_t* new_map = hashmap_new(new_capacity, map->grow_factor, map->destructor, map->hash_fn, map->free_keys);
     if (!new_map) return 0;
@@ -458,7 +458,7 @@ inline int hashmap_resize(hashmap_t* map, const size_t new_capacity)
  * @param key Pointer to the key to remove.
  * @return 1 if the key was found and removed, 0 otherwise.
  */
-inline int hashmap_remove(hashmap_t* map, void* key)
+static inline int hashmap_remove(hashmap_t* map, void* key)
 {
     if (!map || !key) return 0;
     const uint32_t hash = map->hash_fn(key);
@@ -497,7 +497,7 @@ inline int hashmap_remove(hashmap_t* map, void* key)
  * @param map Pointer to the hashmap to iterate over.
  * @return An initialized hashmap_iter_t structure.
  */
-inline hashmap_iter_t hashmap_iter_begin(hashmap_t* map)
+static inline hashmap_iter_t hashmap_iter_begin(hashmap_t* map)
 {
     const hashmap_iter_t iter = { .map = map, .index = 0 };
     return iter;
@@ -513,7 +513,7 @@ inline hashmap_iter_t hashmap_iter_begin(hashmap_t* map)
  * @param iter Pointer to the hashmap iterator.
  * @return Pointer to the next occupied hash_entry_t, or NULL if iteration is complete.
  */
-inline hash_entry_t* hashmap_iter_next(hashmap_iter_t* iter)
+static inline hash_entry_t* hashmap_iter_next(hashmap_iter_t* iter)
 {
     if (!iter || !iter->map) return NULL; // Check for valid iterator and map
 
