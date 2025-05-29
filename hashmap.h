@@ -212,7 +212,7 @@ inline uint32_t hash_int(const uint32_t *x_ptr)
  * @param capacity The total capacity of the hashmap.
  * @return The probe distance as a size_t value.
  */
-inline size_t hash_probe_distance_t
+static inline size_t hash_probe_distance
 (
     const uint32_t hash,
     const size_t index,
@@ -375,7 +375,7 @@ inline int hashmap_insert(hashmap_t* map, void* key, void *value)
         }
 
         // Robin Hood hashing: compare probe distances
-        const size_t existing_dist = hash_probe_distance_t(map->entries[index].hash, index, map->capacity);
+        const size_t existing_dist = hash_probe_distance(map->entries[index].hash, index, map->capacity);
         if (dist > existing_dist)
         {
             // Swap with existing entry
