@@ -188,7 +188,6 @@ static inline uint32_t hash_int(const uint32_t *x_ptr)
     return x;
 }
 
-
 /**
  * @brief Calculates the probe distance for a given hash and index in the hashmap.
  *
