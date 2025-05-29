@@ -250,6 +250,47 @@ static inline void* hashmap_get(hashmap_t* map, void* key)
 }
 
 /**
+ * @brief Initializes a hashmap structure with the specified parameters.
+ *
+ * Allocates and zero-initializes the entries array for the hashmap.
+ * Sets the initial capacity, count, grow factor, destructor, hash function,
+ * and key-freeing flag. If allocation fails, frees the map and returns 0.
+ *
+ * @param map Pointer to the hashmap structure to initialize.
+ * @param capacity Initial number of slots in the hashmap.
+ * @param grow_factor Factor by which the hashmap grows when resized.
+ * @param destructor Function pointer for a custom destructor to free values.
+ * @param hash_fn Function pointer for a custom hash function (uses default if NULL).
+ * @param free_keys Flag indicating if keys should be freed on destruction (1 to free, 0 to not free).
+ * @return 1 on success, 0 on failure.
+ */
+static inline int hashmap_init(
+    hashmap_t *map,
+    const size_t capacity,
+    const double grow_factor,
+    const hashmap_destructor_t destructor,
+    const hash_function_t hash_fn,
+    const int free_keys
+)
+{
+    if (!map) return 0;
+
+    map->entries = calloc(capacity, sizeof(hash_entry_t));
+    if (!map->entries)
+    {
+        return 0; // Return failure if memory allocation fails
+    }
+
+    map->capacity = capacity;
+    map->count = 0;
+    map->grow_factor = grow_factor;
+    map->destructor = destructor;
+    map->hash_fn = hash_fn ? hash_fn : (hash_function_t)hash_str_key; // Use default hash function if none provided
+    map->free_keys = free_keys; // Set the flag for freeing keys
+    return 1; // Return success
+}
+
+/**
  * @brief Allocates and initializes a new hashmap with the specified capacity and element size.
  *
  * This function creates a new hashmap_t structure, allocates memory for the entries array,
@@ -271,21 +312,21 @@ static inline hashmap_t* hashmap_new(
 )
 {
     hashmap_t* map = (hashmap_t*)malloc(sizeof(hashmap_t));
-    if (!map) return NULL;
+    if (!map) return NULL; // Return NULL if memory allocation fails
 
-    map->entries = calloc(capacity, sizeof(hash_entry_t));
-    if (!map->entries)
+    if (!hashmap_init(
+        map,
+        capacity,
+        grow_factor,
+        destructor,
+        hash_fn,
+        free_keys
+    ))
     {
-        free(map);
-        return NULL;
+        free(map); // Free the map if initialization fails
+        return NULL; // Return NULL on failure
     }
 
-    map->capacity = capacity;
-    map->count = 0;
-    map->grow_factor = grow_factor;
-    map->destructor = destructor;
-    map->hash_fn = hash_fn ? hash_fn : (hash_function_t)hash_str_key; // Use default hash function if none provided
-    map->free_keys = free_keys; // Set the flag for freeing keys
     return map;
 }
 
