@@ -1114,6 +1114,7 @@ typedef enum
             {                                                           \
                 return &map->entries[index].value;                      \
             }                                                           \
+            index = (index + 1) % map->capacity;                        \
         }                                                               \
         return NULL;                                                    \
     }                                                                   \
