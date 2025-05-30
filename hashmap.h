@@ -1194,7 +1194,7 @@ typedef enum
                 map->cmp_fn(map->entries[index].key, key)               \
             )                                                           \
             {                                                           \
-                map->entries[index].key = NULL;                         \
+                map->entries[index].key = (k){0};                       \
                 map->entries[index].status = TOMBSTONE;                 \
                 map->count--;                                           \
                 return 1;                                               \
