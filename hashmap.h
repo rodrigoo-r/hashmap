@@ -953,6 +953,23 @@ static inline uint32_t hash_str_key(const char *key)
 }
 
 /**
+ * @brief Computes a 32-bit FNV-1a hash for a single character key.
+ *
+ * This function applies the FNV-1a hash algorithm to a single character,
+ * producing a 32-bit hash value suitable for use as a hash table key.
+ *
+ * @param c The character to hash.
+ * @return The 32-bit hash value of the input character.
+ */
+static inline uint32_t hash_char_key(const char c)
+{
+    uint32_t hash = 2166136261u;   // FNV offset basis
+    hash ^= (uint8_t)c;           // XOR with the character
+    hash *= 16777619u;            // Multiply by FNV prime
+    return hash;
+}
+
+/**
  * @brief Hashes a 32-bit integer using a mix of bitwise and multiplicative operations.
  *
  * This function applies a series of XOR and multiplication steps to the input integer
