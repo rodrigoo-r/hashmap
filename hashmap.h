@@ -976,12 +976,11 @@ static inline uint32_t hash_char_key(const char c)
  * to produce a well-distributed 32-bit hash value. It is suitable for use in hash tables
  * and is inspired by techniques such as MurmurHash finalization.
  *
- * @param x_ptr Pointer to a 32-bit integer to hash.
+ * @param x The 32-bit integer to hash.
  * @return The hashed 32-bit integer.
  */
-static inline uint32_t hash_int(const uint32_t *x_ptr)
+static inline uint32_t hash_int(uint32_t x)
 {
-    uint32_t x = *x_ptr; // Dereference the pointer to get the integer value
     x ^= x >> 16;
     x *= 0x85ebca6b;
     x ^= x >> 13;
