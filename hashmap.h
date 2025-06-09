@@ -1017,16 +1017,17 @@ static inline size_t hash_probe_distance
  * @brief Represents the status of a hashmap entry.
  *
  * This enumeration defines the possible states for an entry in the hashmap:
- * - EMPTY: The entry is unused.
+ * - __FLUENT_LIBC_HASHMAP_EMPTY: The entry is unused.
  * - OCCUPIED: The entry contains a valid key-value pair.
  * - TOMBSTONE: The entry was previously occupied but has been deleted.
  */
-typedef enum
+static enum hash_entry_status_t
 {
-    EMPTY = 0, ///< Indicates that the entry is empty and not used
+    __FLUENT_LIBC_HASHMAP_EMPTY = 0, ///< Indicates that the entry is empty and not used
     OCCUPIED, ///< Indicates that the entry is occupied with a valid key-value pair
     TOMBSTONE ///< Indicates that the entry was previously occupied but has been deleted
-} hash_entry_status_t;
+};
+typedef enum hash_entry_status_t hash_entry_status_t;
 
 // ============= TYPED HASHMAP MACRO =============
 #define DEFINE_HASHMAP(K, V, NAME)                             \
@@ -1120,7 +1121,7 @@ typedef enum
         if (!map) return NULL;                                          \
         const uint32_t hash = map->hash_fn(key);                        \
         size_t index = hash % map->capacity;                            \
-        while (map->entries[index].status != EMPTY)                     \
+        while (map->entries[index].status != __FLUENT_LIBC_HASHMAP_EMPTY) \
         {                                                               \
             if (                                                        \
                 map->entries[index].status == OCCUPIED &&               \
@@ -1152,7 +1153,7 @@ typedef enum
         };                                                              \
         while (1)                                                       \
         {                                                               \
-            if (map->entries[index].status == EMPTY || map->entries[index].status == TOMBSTONE) \
+            if (map->entries[index].status == __FLUENT_LIBC_HASHMAP_EMPTY || map->entries[index].status == TOMBSTONE) \
             {                                                           \
                 map->entries[index] = new_entry;                        \
                 map->count++;                                           \
@@ -1203,7 +1204,7 @@ typedef enum
         if (!map) return 0;                                             \
         const uint32_t hash = map->hash_fn(key);                        \
         size_t index = hash % map->capacity;                            \
-        while (map->entries[index].status != EMPTY)                     \
+        while (map->entries[index].status != __FLUENT_LIBC_HASHMAP_EMPTY) \
         {                                                               \
             if (                                                        \
                 map->entries[index].status == OCCUPIED &&               \
