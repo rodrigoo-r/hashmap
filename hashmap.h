@@ -1018,14 +1018,14 @@ static inline size_t hash_probe_distance
  *
  * This enumeration defines the possible states for an entry in the hashmap:
  * - __FLUENT_LIBC_HASHMAP_EMPTY: The entry is unused.
- * - OCCUPIED: The entry contains a valid key-value pair.
- * - TOMBSTONE: The entry was previously occupied but has been deleted.
+ * - __FLUENT_LIBC_HASHMAP_OCCUPIED: The entry contains a valid key-value pair.
+ * - __FLUENT_LIBC_HASHMAP_TOMBSTONE: The entry was previously occupied but has been deleted.
  */
 static enum hash_entry_status_t
 {
     __FLUENT_LIBC_HASHMAP_EMPTY = 0, ///< Indicates that the entry is empty and not used
-    OCCUPIED, ///< Indicates that the entry is occupied with a valid key-value pair
-    TOMBSTONE ///< Indicates that the entry was previously occupied but has been deleted
+    __FLUENT_LIBC_HASHMAP_OCCUPIED, ///< Indicates that the entry is occupied with a valid key-value pair
+    __FLUENT_LIBC_HASHMAP_TOMBSTONE ///< Indicates that the entry was previously occupied but has been deleted
 };
 typedef enum hash_entry_status_t hash_entry_status_t;
 
@@ -1124,7 +1124,7 @@ typedef enum hash_entry_status_t hash_entry_status_t;
         while (map->entries[index].status != __FLUENT_LIBC_HASHMAP_EMPTY) \
         {                                                               \
             if (                                                        \
-                map->entries[index].status == OCCUPIED &&               \
+                map->entries[index].status == __FLUENT_LIBC_HASHMAP_OCCUPIED && \
                 map->entries[index].hash == hash &&                     \
                 map->cmp_fn(map->entries[index].key, key)               \
             )                                                           \
@@ -1148,12 +1148,12 @@ typedef enum hash_entry_status_t hash_entry_status_t;
         hash_##NAME##_entry_t new_entry = {                             \
             .key = key,                                                 \
             .value = value,                                             \
-            .status = OCCUPIED,                                         \
+            .status = __FLUENT_LIBC_HASHMAP_OCCUPIED,                   \
             .hash = hash                                                \
         };                                                              \
         while (1)                                                       \
         {                                                               \
-            if (map->entries[index].status == __FLUENT_LIBC_HASHMAP_EMPTY || map->entries[index].status == TOMBSTONE) \
+            if (map->entries[index].status == __FLUENT_LIBC_HASHMAP_EMPTY || map->entries[index].status == __FLUENT_LIBC_HASHMAP_TOMBSTONE) \
             {                                                           \
                 map->entries[index] = new_entry;                        \
                 map->count++;                                           \
@@ -1177,7 +1177,7 @@ typedef enum hash_entry_status_t hash_entry_status_t;
         if (!new_map) return 0;                                         \
         for (size_t i = 0; i < map->capacity; i++)                      \
         {                                                               \
-            if (map->entries[i].status == OCCUPIED)                     \
+            if (map->entries[i].status == __FLUENT_LIBC_HASHMAP_OCCUPIED) \
             {                                                           \
                 if (                                                    \
                     !hashmap_##NAME##_insert(                           \
@@ -1207,13 +1207,13 @@ typedef enum hash_entry_status_t hash_entry_status_t;
         while (map->entries[index].status != __FLUENT_LIBC_HASHMAP_EMPTY) \
         {                                                               \
             if (                                                        \
-                map->entries[index].status == OCCUPIED &&               \
+                map->entries[index].status == __FLUENT_LIBC_HASHMAP_OCCUPIED && \
                 map->entries[index].hash == hash &&                     \
                 map->cmp_fn(map->entries[index].key, key)               \
             )                                                           \
             {                                                           \
                 map->entries[index].key = (K){0};                       \
-                map->entries[index].status = TOMBSTONE;                 \
+                map->entries[index].status = __FLUENT_LIBC_HASHMAP_TOMBSTONE; \
                 map->count--;                                           \
                 return 1;                                               \
             }                                                           \
@@ -1232,7 +1232,7 @@ typedef enum hash_entry_status_t hash_entry_status_t;
         while (iter->index < iter->map->capacity)                       \
         {                                                               \
             hash_##NAME##_entry_t *entry = &iter->map->entries[iter->index++]; \
-            if (entry->status == OCCUPIED)                              \
+            if (entry->status == __FLUENT_LIBC_HASHMAP_OCCUPIED)        \
             {                                                           \
                 return entry;                                           \
             }                                                           \
