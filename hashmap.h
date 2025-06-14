@@ -1013,7 +1013,7 @@ static inline size_t hash_probe_distance
 }
 
 /**
- * @enum hash_entry_status_t
+ * @enum __fluent_libc_hashmap_hash_entry_status_t
  * @brief Represents the status of a hashmap entry.
  *
  * This enumeration defines the possible states for an entry in the hashmap:
@@ -1021,13 +1021,12 @@ static inline size_t hash_probe_distance
  * - __FLUENT_LIBC_HASHMAP_OCCUPIED: The entry contains a valid key-value pair.
  * - __FLUENT_LIBC_HASHMAP_TOMBSTONE: The entry was previously occupied but has been deleted.
  */
-static enum hash_entry_status_t
+typedef enum
 {
     __FLUENT_LIBC_HASHMAP_EMPTY = 0, ///< Indicates that the entry is empty and not used
     __FLUENT_LIBC_HASHMAP_OCCUPIED, ///< Indicates that the entry is occupied with a valid key-value pair
     __FLUENT_LIBC_HASHMAP_TOMBSTONE ///< Indicates that the entry was previously occupied but has been deleted
-};
-typedef enum hash_entry_status_t hash_entry_status_t;
+} __fluent_libc_hashmap_hash_entry_status_t;
 
 // ============= TYPED HASHMAP MACRO =============
 #define DEFINE_HASHMAP(K, V, NAME)                             \
@@ -1037,7 +1036,7 @@ typedef enum hash_entry_status_t hash_entry_status_t;
     {                                                                   \
         K key;                                                          \
         V value;                                                        \
-        hash_entry_status_t status;                                     \
+        __fluent_libc_hashmap_hash_entry_status_t status;                                     \
         uint32_t hash;                                                  \
     } hash_##NAME##_entry_t;                                            \
     typedef struct hashmap_##NAME##_t                                   \
