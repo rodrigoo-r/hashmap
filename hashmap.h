@@ -1105,7 +1105,7 @@ typedef enum
         }                                                               \
         return map;                                                     \
     }                                                                   \
-    static inline void hashmap_##NAME##_free(hashmap_##NAME##_t *map)  \
+    static inline void hashmap_##NAME##_free(hashmap_##NAME##_t *map)   \
     {                                                                   \
         if (!map) return;                                               \
         if (map->destructor)                                            \
