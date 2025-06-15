@@ -1068,7 +1068,7 @@ typedef enum
     )                                                                   \
     {                                                                   \
         if (!map) return 0;                                             \
-        map->entries = calloc(capacity, sizeof(hash_##NAME##_entry_t)); \
+        map->entries = (hash_##NAME##_entry_t *)calloc(capacity, sizeof(hash_##NAME##_entry_t)); \
         if (!map->entries)                                              \
         {                                                               \
             return 0;                                                   \
